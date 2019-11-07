@@ -80,7 +80,7 @@ done
 # setLight RED 1 ON
 setLight(){
   R="$1_0$2"
-  echo "setLightState \$1: $1 \$2: $2 \$3: $3 - Pin: ${!R} " >> $LOG
+  echo "setLightState - Color: $1, DeviceID: $2, State: $3, Pin: ${!R} " >> $LOG
   setLightState ${!R} $3
 }
 
