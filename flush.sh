@@ -59,11 +59,11 @@ do
   
   # Export pins so that we can use them
 
-  echo "exportPin ${!R}" >> $LOG
-  echo "exportPin ${!G}" >> $LOG
+  #echo "exportPin ${!R}" >> $LOG
+  #echo "exportPin ${!G}" >> $LOG
 
-  echo "setOutput ${!R}" >> $LOG
-  echo "setOutput ${!G}" >> $LOG
+  #echo "setOutput ${!R}" >> $LOG
+  #echo "setOutput ${!G}" >> $LOG
 
   exportPin ${!R}
   exportPin ${!G}
@@ -99,8 +99,8 @@ flush_drive () {
     #
     #shred -f -z -n 1 ${DISC} | col -b -l 10 >> $LOG
     echo "shred -f -n 1 ${DISC} ...."
-    #time ( shred -f -n 1 ${DISC} ) 2>&1 1>/dev/null >> $LOG
-    time (sleep 5) 2>&1 1>/dev/null >> $LOG
+    time ( shred -f -n 1 ${DISC} ) 2>&1 1> /dev/null >> $LOG
+    #time (sleep 5) 2>&1 1>/dev/null >> $LOG
     echo "done" >> $LOG
 
     setLight "RED" $DEVICE_NR $OFF
