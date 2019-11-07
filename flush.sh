@@ -53,6 +53,7 @@ setLightState(){
     echo $2 > $BASE_GPIO_PATH/gpio$1/value
   else 
     echo "LED pin not found"
+  fi
 }
 
 for i in {1..4}
