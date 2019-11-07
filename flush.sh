@@ -49,7 +49,10 @@ setOutput(){
 
 # Utility function to change state of a light
 setLightState(){
-  echo $2 > $BASE_GPIO_PATH/gpio$1/value
+  if [ -n "$1" ]; then
+    echo $2 > $BASE_GPIO_PATH/gpio$1/value
+  else 
+    echo "LED pin not found"
 }
 
 for i in {1..4}
@@ -98,8 +101,8 @@ flush_drive () {
     echo "shredding " >> $LOG
     #
     #shred -f -z -n 1 ${DISC} | col -b -l 10 >> $LOG
-    echo "shred -f -n 1 ${DISC} ...."
-    time ( shred -f -n 1 ${DISC} ) 2>&1 1> /dev/null >> $LOG
+    echo "shred -f -n 1 ${DISC} .... (will take some time) " >> $LOG
+    time ( shred -f -n 1 ${DISC} ) 2>&1 1>/dev/null >> $LOG
     #time (sleep 5) 2>&1 1>/dev/null >> $LOG
     echo "done" >> $LOG
 
