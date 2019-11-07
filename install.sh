@@ -9,11 +9,13 @@ fi
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 FLUSH=flush.sh
 RULE=99-flush-sd.rules
-
+LOG=/var/log/flush.log
 
 echo "change permission on flush script $DIR/$FLUSH"
 chmod 755 $DIR/$FLUSH
 
+echo "init log file ${LOG}"
+touch $LOG
 
 echo "configure udev rule /etc/udev/rules.d/$RULE"
 
