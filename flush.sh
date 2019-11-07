@@ -35,16 +35,19 @@ GREEN_04=3
 ON="1"
 OFF="0"
 
-# Utility function to export a pin if not already exported
-exportPin(){
-  if [ ! -e $BASE_GPIO_PATH/gpio$1 ]; then
-    echo "$1" > $BASE_GPIO_PATH/export
+# Utility function to set a pin as an output
+setOutput(){
+  if [ ! -e $BASE_GPIO_PATH/gpio$1/direction ]; then
+    echo "out" > $BASE_GPIO_PATH/gpio$1/direction
   fi
 }
 
-# Utility function to set a pin as an output
-setOutput(){
-  echo "out" > $BASE_GPIO_PATH/gpio$1/direction
+# Utility function to export a pin if not already exported
+initPin(){
+  if [ ! -e $BASE_GPIO_PATH/gpio$1 ]; then
+    echo "$1" > $BASE_GPIO_PATH/export
+    setOutput $1
+  fi
 }
 
 # Utility function to change state of a light
@@ -60,21 +63,9 @@ for i in {1..4}
 do
   R="RED_0$i"
   G="GREEN_0$i"
-  
-  # Export pins so that we can use them
 
-  #echo "exportPin ${!R}" >> $LOG
-  #echo "exportPin ${!G}" >> $LOG
-
-  #echo "setOutput ${!R}" >> $LOG
-  #echo "setOutput ${!G}" >> $LOG
-
-  exportPin ${!R}
-  exportPin ${!G}
-
-  # Set pins as outputs
-  setOutput ${!R}
-  setOutput ${!G}
+  initPin ${!R}
+  initPin ${!G}
  
 done
 
@@ -168,5 +159,5 @@ if [ "${ACTION}" = change -a -d "/sys${DEVPATH}" ]; then
     echo "FLUSH DRIVE ---------------------------------- ${ENV}" >> $LOG
     flush_drive ${DEVNAME} ${DEVICE_NR}
 else   
-    echo "Nothing to to        : ${ENV} " >> $LOG
+    echo "Nothing to do        : ${ENV} " >> $LOG
 fi
