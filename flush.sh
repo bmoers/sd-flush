@@ -77,7 +77,7 @@ done
 # setLight RED 1 ON
 setLight(){
   R="$1_0$2"
-  echo "setLightState ${!R} $3" >> $LOG
+  echo "setLightState \$1: $1 \$2: $2 \$3: $3 - Pin: ${!R} " >> $LOG
   setLightState ${!R} $3
 }
 
@@ -123,26 +123,26 @@ if [ "${ACTION}" = change -a -d "/sys${DEVPATH}" ]; then
 
     if $(/sbin/sfdisk -l ${DEVNAME} &> /dev/null) ;
     then
+        DISC_EXISTS=true
+    else 
         echo "DISC removed" >> $LOG
         setLight "RED" $DEVICE_NR $OFF
         setLight "GREEN" $DEVICE_NR $OFF
         exit 0
-    else 
-        DISC_EXISTS=true
     fi
     echo "DISC_EXISTS      : ${DISC_EXISTS} " >> $LOG
     
 
     if $(/sbin/sfdisk -d ${DEVNAME} &> /dev/null) ;
     then
+        PARTITION_EXISTS=true
+    else
         echo "DISC has no partition, seems to be clean" >> $LOG
         echo "PARTITION_EXISTS > $PARTITION_EXISTS" >> $LOG
       
         setLight "RED" $DEVICE_NR $OFF
         setLight "GREEN" $DEVICE_NR $ON
         exit 0
-    else    
-        PARTITION_EXISTS=true
     fi
     echo "PARTITION_EXISTS : ${PARTITION_EXISTS} " >> $LOG
 

@@ -16,6 +16,7 @@ chmod 755 $DIR/$FLUSH
 
 echo "init log file ${LOG}"
 touch $LOG
+chmod 755 /etc/udev/rules.d/$RULE
 
 echo "configure udev rule /etc/udev/rules.d/$RULE"
 
