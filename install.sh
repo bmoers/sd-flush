@@ -23,6 +23,7 @@ fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SERVICE=drive-change
+SERVICE_FILE=/lib/systemd/system/${SERVICE}\@.service
 FLUSH=flush.sh
 RULE=99-flush-sd.rules
 LOG=/var/log/flush.log
@@ -33,6 +34,27 @@ chmod chmod +x $DIR/$FLUSH
 echo "init log file ${LOG}"
 touch $LOG
 chmod chmod +x /etc/udev/rules.d/$RULE
+
+
+echo "configure service ${SERVICE_FILE}"
+
+cat > ${SERVICE_FILE} << EOF
+[Unit]
+Description=Flush SD Drive
+
+[Service]
+Type=oneshot
+ExecStart=$DIR/$FLUSH %I
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+echo "reload service daemon"
+
+systemctl enable ${SERVICE_FILE}
+systemctl daemon-reload
+
 
 echo "configure udev rule /etc/udev/rules.d/$RULE"
 
@@ -48,27 +70,19 @@ rm -rf /etc/udev/rules.d/$RULE
 echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", TAG+=\"systemd\", ENV{SYSTEMD_WANTS}==\"${SERVICE}@%E{DEVNAME}.service\"" > /etc/udev/rules.d/$RULE
 chmod 755 /etc/udev/rules.d/$RULE
 
+#/usr/bin/systemd-escape -p --template=sync-sensor-logs@.service $env{DEVNAME}
+echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", PROGRAM=\"/usr/bin/systemd-escape -p --template=${SERVICE}@.service $env{DEVNAME}\", ENV{SYSTEMD_WANTS}+=\"%c\"" > /etc/udev/rules.d/$RULE
+chmod 755 /etc/udev/rules.d/$RULE
 
 #>> /lib/systemd/system/flush-sd@.service
 #/etc/systemd/system/flush-sd@.service
 
-echo "configure service /etc/systemd/system/${SERVICE}\@.service"
 
-cat > /etc/systemd/system/${SERVICE}\@.service << EOF
-[Unit]
-Description=Flush SD Drive
 
-[Service]
-Type=oneshot
-ExecStart=$DIR/$FLUSH %I
 
-[Install]
-WantedBy=multi-user.target
-EOF
-
-echo "reload service daemon"
-systemctl daemon-reload
-
+# systemctl --type=service
+# systemctl status drive-change.service
+# systemctl enable /etc/systemd/system/drive-change\@.service
 
 echo "refreshing the rules"
 # refresh rules
