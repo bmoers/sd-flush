@@ -7,6 +7,14 @@ fi
 
 LOG=/var/log/flush.log
 
+echo "param 1 : ${1}" >> $LOG
+
+eval $(udevadm info --query=env --export $1)
+
+env >> $LOG
+
+exit
+
 #env >>$LOG
 #file "/sys${DEVPATH}" >>$LOG
 
