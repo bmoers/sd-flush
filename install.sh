@@ -20,13 +20,12 @@ if [ "$EUID" -ne 0 ]
   exit
 fi
 
+source ./env.sh
+
+#sudo apt-get install at --fix-missing -y
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-SERVICE=drive-change
-SERVICE_FILE=/lib/systemd/system/${SERVICE}\@.service
-FLUSH=flush.sh
-RULE=99-flush-sd.rules
-LOG=/var/log/flush.log
+
 
 echo "change permission on flush script $DIR/$FLUSH"
 chmod chmod +x $DIR/$FLUSH
@@ -35,24 +34,49 @@ echo "init log file ${LOG}"
 touch $LOG
 chmod chmod +x /etc/udev/rules.d/$RULE
 
+# Utility function to set a pin as an output
+setOutput(){
+  echo "out" > $BASE_GPIO_PATH/gpio$1/direction
+}
+
+# Utility function to export a pin if not already exported
+initPin(){
+  if [ ! -e $BASE_GPIO_PATH/gpio$1 ]; then
+    echo "$1" > $BASE_GPIO_PATH/export
+  fi
+  setOutput $1
+
+  echo $ON > $BASE_GPIO_PATH/gpio$1/value
+  sleep 0.2
+  echo $OFF > $BASE_GPIO_PATH/gpio$1/value
+}
+
+echo "init LED"
+for i in {1..4}
+do
+  R="RED_0$i"
+  G="GREEN_0$i"
+  initPin ${!R}
+  
+  initPin ${!G}
+done
 
 echo "configure service ${SERVICE_FILE}"
 
 cat > ${SERVICE_FILE} << EOF
 [Unit]
-Description=Flush SD Drive
+BindTo=%i.device
+After=%i.device
 
 [Service]
 Type=oneshot
-ExecStart=$DIR/$FLUSH %I
-
-[Install]
-WantedBy=multi-user.target
+TimeoutStartSec=300
+ExecStart=$DIR/$FLUSH /%I
 EOF
 
 echo "reload service daemon"
 
-systemctl enable ${SERVICE_FILE}
+#systemctl enable ${SERVICE_FILE}
 systemctl daemon-reload
 
 
@@ -65,20 +89,29 @@ rm -rf /etc/udev/rules.d/$RULE
 #echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", RUN+=\"$DIR/$FLUSH\"" > /etc/udev/rules.d/$RULE
 #chmod 755 /etc/udev/rules.d/$RULE
 
-#####echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", PROGRAM=\"/usr/bin/systemd-escape -p --template=flush-sd@.service $env{DEVNAME}\", ENV{SYSTEMD_WANTS}+=\"%c\"" > /etc/udev/rules.d/$RULE 
+#echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", TAG+=\"systemd\", ENV{SYSTEMD_WANTS}==\"${SERVICE}@%E{DEVNAME}.service\"" > /etc/udev/rules.d/$RULE
+#chmod 755 /etc/udev/rules.d/$RULE
 
-echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", TAG+=\"systemd\", ENV{SYSTEMD_WANTS}==\"${SERVICE}@%E{DEVNAME}.service\"" > /etc/udev/rules.d/$RULE
-chmod 755 /etc/udev/rules.d/$RULE
+#echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", PROGRAM=\"systemd-escape -p --template=${SERVICE}@.service $env{DEVNAME}\", ENV{SYSTEMD_WANTS}+=\"%c\"" > /etc/udev/rules.d/$RULE
+#chmod 755 /etc/udev/rules.d/$RULE
 
-#/usr/bin/systemd-escape -p --template=sync-sensor-logs@.service $env{DEVNAME}
-echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", PROGRAM=\"/usr/bin/systemd-escape -p --template=${SERVICE}@.service $env{DEVNAME}\", ENV{SYSTEMD_WANTS}+=\"%c\"" > /etc/udev/rules.d/$RULE
+cat > /etc/udev/rules.d/$RULE << EOF
+ACTION=="change", KERNEL=="sd?", ENV{ID_BUS}=="usb", ENV{DISK_MEDIA_CHANGE}=="1", ENV{DEVTYPE}=="disk", \
+  PROGRAM="systemd-escape -p --template=${SERVICE}@.service $env{DEVNAME}",\
+  ENV{SYSTEMD_WANTS}+="%c"
+EOF
 chmod 755 /etc/udev/rules.d/$RULE
 
 #>> /lib/systemd/system/flush-sd@.service
 #/etc/systemd/system/flush-sd@.service
 
 
-
+# systemctl stop [servicename]
+# systemctl disable [servicename]
+# rm /etc/systemd/system/[servicename]
+# rm /etc/systemd/system/[servicename] symlinks that might be related
+# systemctl daemon-reload
+# systemctl reset-failed
 
 # systemctl --type=service
 # systemctl status drive-change.service
@@ -86,8 +119,7 @@ chmod 755 /etc/udev/rules.d/$RULE
 
 echo "refreshing the rules"
 # refresh rules
-udevadm control --reload-rules
-udevadm trigger
+udevadm control --reload-rules && udevadm trigger
 
 echo "plug the sd devices out and back in now"
 

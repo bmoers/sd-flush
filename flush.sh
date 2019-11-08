@@ -5,57 +5,14 @@ if [ "$EUID" -ne 0 ]
   exit
 fi
 
-LOG=/var/log/flush.log
+source ./env.sh
 
 #echo "param 1 : ${1}" >> $LOG
 
+# load vars from udev for current drive
 eval $(udevadm info --query=env --export $1)
 #env >> $LOG
 
-
-
-#env >>$LOG
-#file "/sys${DEVPATH}" >>$LOG
-
-
-BASE_GPIO_PATH=/sys/class/gpio
-
-# Assign names to GPIO pin numbers for each light
-
-#GND_01=Pin-39
-RED_01=26
-GREEN_01=19
-
-#GND_02=Pin-34
-RED_02=16
-GREEN_02=20
-
-#GND_03=Pin-25
-RED_03=11
-GREEN_03=9
-
-#GND_04=Pin-9
-RED_04=4
-GREEN_04=3
-
-# Assign names to states
-ON="1"
-OFF="0"
-
-# Utility function to set a pin as an output
-setOutput(){
-  if [ ! -e $BASE_GPIO_PATH/gpio$1/direction || grep -Fxq "$FILENAME" my_list.txt ]; then
-    echo "out" > $BASE_GPIO_PATH/gpio$1/direction
-  fi
-}
-
-# Utility function to export a pin if not already exported
-initPin(){
-  if [ ! -e $BASE_GPIO_PATH/gpio$1 ]; then
-    echo "$1" > $BASE_GPIO_PATH/export
-  fi
-  setOutput $1
-}
 
 # Utility function to change state of a light
 setLightState(){
@@ -68,13 +25,7 @@ setLightState(){
   fi
 }
 
-#for i in {1..4}
-#do
-#  R="RED_0$i"
-#  G="GREEN_0$i"
-#  initPin ${!R}
-#  initPin ${!G}
-#done
+
 
 # setLight RED 1 ON
 setLight(){
