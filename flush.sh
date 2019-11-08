@@ -52,7 +52,7 @@ flush_drive () {
     #
     #shred -f -z -n 1 ${DISC} | col -b -l 10 >> $LOG
     echo "shred -f -n 1 ${DISC} .... (will take some time) " >> $LOG
-    time ( shred -f -n 1 ${DISC} ) 2>&1 1>/dev/null >> $LOG
+    #time ( shred -f -n 1 ${DISC} ) 2>&1 1>/dev/null >> $LOG
     #time (sleep 5) 2>&1 1>/dev/null >> $LOG
     echo "done" >> $LOG
 
