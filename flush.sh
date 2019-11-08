@@ -7,13 +7,12 @@ fi
 
 LOG=/var/log/flush.log
 
-echo "param 1 : ${1}" >> $LOG
+#echo "param 1 : ${1}" >> $LOG
 
 eval $(udevadm info --query=env --export $1)
+#env >> $LOG
 
-env >> $LOG
 
-exit
 
 #env >>$LOG
 #file "/sys${DEVPATH}" >>$LOG
@@ -45,7 +44,7 @@ OFF="0"
 
 # Utility function to set a pin as an output
 setOutput(){
-  if [ ! -e $BASE_GPIO_PATH/gpio$1/direction ]; then
+  if [ ! -e $BASE_GPIO_PATH/gpio$1/direction || grep -Fxq "$FILENAME" my_list.txt ]; then
     echo "out" > $BASE_GPIO_PATH/gpio$1/direction
   fi
 }
@@ -54,28 +53,28 @@ setOutput(){
 initPin(){
   if [ ! -e $BASE_GPIO_PATH/gpio$1 ]; then
     echo "$1" > $BASE_GPIO_PATH/export
-    setOutput $1
   fi
+  setOutput $1
 }
 
 # Utility function to change state of a light
 setLightState(){
   if [ -n "$1" ]; then
+    echo "$1" > $BASE_GPIO_PATH/export
+    echo "out" > $BASE_GPIO_PATH/gpio$1/direction
     echo $2 > $BASE_GPIO_PATH/gpio$1/value
   else 
     echo "LED pin not found"
   fi
 }
 
-for i in {1..4}
-do
-  R="RED_0$i"
-  G="GREEN_0$i"
-
-  initPin ${!R}
-  initPin ${!G}
- 
-done
+#for i in {1..4}
+#do
+#  R="RED_0$i"
+#  G="GREEN_0$i"
+#  initPin ${!R}
+#  initPin ${!G}
+#done
 
 # setLight RED 1 ON
 setLight(){
@@ -112,7 +111,7 @@ flush_drive () {
 }
 
 
-if [ "${ACTION}" = change -a -d "/sys${DEVPATH}" ]; then
+if [ -d "/sys${DEVPATH}" ]; then
 
     # ID_INSTANCE=0:2
     #${ID_INSTANCE}
