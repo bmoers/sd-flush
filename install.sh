@@ -6,7 +6,7 @@
 # https://stackoverflow.com/questions/49349712/udev-detach-script-to-wait-for-mounting
 # https://forums.opensuse.org/showthread.php/485261-Script-run-from-udev-rule-gets-killed-shortly-after-start
 
-# https://www.pcsuggest.com/run-shell-scripts-from-udev-rules/  
+# https://www.pcsuggest.com/run-shell-scripts-from-udev-rules/
 
 # --> https://wiki.archlinux.de/title/Udev#Ausf.C3.BChren_bei_anstecken_von_USB_Ger.C3.A4ten
 
@@ -16,15 +16,33 @@
 
 
 if [ "$EUID" -ne 0 ]
-  then echo "Please run as root"
-  exit
+then echo "Please run as root"
+    exit
 fi
 
-source ./env.sh
-
-#sudo apt-get install at --fix-missing -y
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $DIR/env.sh
+
+
+echo "install pigs" >> $LOG
+apt-get install pigpio
+systemctl start pigpiod
+systemctl enable pigpiod
+
+# fix to listen to ip4 instead of ip6
+cat > /lib/systemd/system/pigpiod.service << EOF
+[Unit]
+Description=Daemon required to control GPIO pins via pigpio
+[Service]
+ExecStart=/usr/bin/pigpiod -l -n 127.0.0.1
+ExecStop=/bin/systemctl kill pigpiod
+Type=forking
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# apply changes
+systemctl daemon-reload
 
 
 echo "change permission on flush script $DIR/$FLUSH"
@@ -34,32 +52,22 @@ echo "init log file ${LOG}"
 touch $LOG
 chmod chmod +x /etc/udev/rules.d/$RULE
 
-# Utility function to set a pin as an output
-setOutput(){
-  echo "out" > $BASE_GPIO_PATH/gpio$1/direction
-}
-
-# Utility function to export a pin if not already exported
+# init pins and blink
 initPin(){
-  if [ ! -e $BASE_GPIO_PATH/gpio$1 ]; then
-    echo "$1" > $BASE_GPIO_PATH/export
-  fi
-  setOutput $1
-
-  echo $ON > $BASE_GPIO_PATH/gpio$1/value
-  sleep 0.2
-  echo $OFF > $BASE_GPIO_PATH/gpio$1/value
+    pigs modes $1 w
+    # blink
+    pigs w $1 $ON mils 1000 w $1 $OFF &
 }
 
 echo "init LED"
 for i in {1..4}
 do
-  R="RED_0$i"
-  G="GREEN_0$i"
-  initPin ${!R}
-  
-  initPin ${!G}
+    R="RED_0$i"
+    G="GREEN_0$i"
+    initPin ${!R}
+    initPin ${!G}
 done
+
 
 echo "configure service ${SERVICE_FILE}"
 
@@ -73,6 +81,18 @@ Type=oneshot
 TimeoutStartSec=300
 ExecStart=$DIR/$FLUSH /%I
 EOF
+
+#cat > ${SERVICE_FILE} << EOF
+#[Unit]
+#Description=changes to dvd drive
+#
+#[Service]
+#Type=oneshot
+#ExecStart=$DIR/$FLUSH %I
+#
+#[Install]
+#WantedBy=multi-user.target
+#EOF
 
 echo "reload service daemon"
 
@@ -96,9 +116,8 @@ rm -rf /etc/udev/rules.d/$RULE
 #chmod 755 /etc/udev/rules.d/$RULE
 
 cat > /etc/udev/rules.d/$RULE << EOF
-ACTION=="change", KERNEL=="sd?", ENV{ID_BUS}=="usb", ENV{DISK_MEDIA_CHANGE}=="1", ENV{DEVTYPE}=="disk", \
-  PROGRAM="systemd-escape -p --template=${SERVICE}@.service $env{DEVNAME}",\
-  ENV{SYSTEMD_WANTS}+="%c"
+#ACTION=="change", KERNEL=="sd?", ENV{ID_BUS}=="usb", ENV{DISK_MEDIA_CHANGE}=="1", ENV{DEVTYPE}=="disk", PROGRAM="systemd-escape -p --template=${SERVICE}@.service $env{DEVNAME}", ENV{SYSTEMD_WANTS}+="%c"
+ ACTION=="change", KERNEL=="sd?", ENV{ID_BUS}=="usb", ENV{DISK_MEDIA_CHANGE}=="1", ENV{DEVTYPE}=="disk", TAG+="systemd", ENV{SYSTEMD_WANTS}=="${SERVICE}@%E{DEVNAME}.service""
 EOF
 chmod 755 /etc/udev/rules.d/$RULE
 
@@ -112,6 +131,8 @@ chmod 755 /etc/udev/rules.d/$RULE
 # rm /etc/systemd/system/[servicename] symlinks that might be related
 # systemctl daemon-reload
 # systemctl reset-failed
+
+# systemctl status flush-sd@dev-sdc.service
 
 # systemctl --type=service
 # systemctl status drive-change.service
