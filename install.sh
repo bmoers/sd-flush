@@ -104,7 +104,8 @@ systemctl daemon-reload
 echo "configure udev rule /etc/udev/rules.d/$RULE"
 
 # remove in case script is executed multiple times
-if [ ! -z "$RULE"] ; then
+if [ -n "$RULE" ] ; then
+    echo "removing existing rule /etc/udev/rules.d/$RULE"
     rm -rf /etc/udev/rules.d/$RULE
 fi
 
