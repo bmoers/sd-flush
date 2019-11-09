@@ -3,7 +3,7 @@
 #  http://blog.fraggod.net/2012/06/16/proper-ish-way-to-start-long-running-systemd-service-on-udev-event-device-hotplug.html
 #  http://blog.fraggod.net/2015/01/12/starting-systemd-service-instance-for-device-from-udev.html
 
-# https://stackoverflow.com/questions/49349712/udev-detach-script-to-wait-for-mounting
+# IGNORE https://stackoverflow.com/questions/49349712/udev-detach-script-to-wait-for-mounting
 # https://forums.opensuse.org/showthread.php/485261-Script-run-from-udev-rule-gets-killed-shortly-after-start
 
 # https://www.pcsuggest.com/run-shell-scripts-from-udev-rules/
@@ -73,12 +73,11 @@ echo "configure service ${SERVICE_FILE}"
 
 cat > ${SERVICE_FILE} << EOF
 [Unit]
-BindTo=%i.device
-After=%i.device
+Description=flush sd card
 
 [Service]
 Type=oneshot
-TimeoutStartSec=300
+TimeoutStartSec=30
 ExecStart=$DIR/$FLUSH /%I
 EOF
 
@@ -106,24 +105,23 @@ echo "configure udev rule /etc/udev/rules.d/$RULE"
 rm -rf /etc/udev/rules.d/$RULE
 
 # create rule
-#echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", RUN+=\"$DIR/$FLUSH\"" > /etc/udev/rules.d/$RULE
+#echo "#ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", RUN+=\"$DIR/$FLUSH\"" >> /etc/udev/rules.d/$RULE
 #chmod 755 /etc/udev/rules.d/$RULE
 
-#echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", TAG+=\"systemd\", ENV{SYSTEMD_WANTS}==\"${SERVICE}@%E{DEVNAME}.service\"" > /etc/udev/rules.d/$RULE
+#echo "#ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", TAG+=\"systemd\", ENV{SYSTEMD_WANTS}==\"${SERVICE}@%E{DEVNAME}.service\"" >> /etc/udev/rules.d/$RULE
 #chmod 755 /etc/udev/rules.d/$RULE
 
-#echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", PROGRAM=\"systemd-escape -p --template=${SERVICE}@.service $env{DEVNAME}\", ENV{SYSTEMD_WANTS}+=\"%c\"" > /etc/udev/rules.d/$RULE
-#chmod 755 /etc/udev/rules.d/$RULE
-
-cat > /etc/udev/rules.d/$RULE << EOF
-#ACTION=="change", KERNEL=="sd?", ENV{ID_BUS}=="usb", ENV{DISK_MEDIA_CHANGE}=="1", ENV{DEVTYPE}=="disk", PROGRAM="systemd-escape -p --template=${SERVICE}@.service $env{DEVNAME}", ENV{SYSTEMD_WANTS}+="%c"
- ACTION=="change", KERNEL=="sd?", ENV{ID_BUS}=="usb", ENV{DISK_MEDIA_CHANGE}=="1", ENV{DEVTYPE}=="disk", TAG+="systemd", ENV{SYSTEMD_WANTS}=="${SERVICE}@%E{DEVNAME}.service""
-EOF
+echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", PROGRAM=\"/bin/systemd-escape -p --template=${SERVICE}@.service \$env{DEVNAME}.\$env{SEQNUM}\", ENV{SYSTEMD_WANTS}+=\"%c\"" >> /etc/udev/rules.d/$RULE
 chmod 755 /etc/udev/rules.d/$RULE
 
 #>> /lib/systemd/system/flush-sd@.service
-#/etc/systemd/system/flush-sd@.service
+# /lib/systemd/system/flush-sd@.service
 
+#----> funktioniert !!
+#ACTION=="change", KERNEL=="sd?", ENV{ID_BUS}=="usb", ENV{DISK_MEDIA_CHANGE}=="1", ENV{DEVTYPE}=="disk", ENV{SYSTEMD_WANTS}+="flush-sd@dev-%k.service"
+#ACTION=="change", KERNEL=="sd?", ENV{ID_BUS}=="usb", ENV{DISK_MEDIA_CHANGE}=="1", ENV{DEVTYPE}=="disk", PROGRAM="/bin/systemd-escape -p --template=flush-sd@.service $env{DEVNAME}", ENV{SYSTEMD_WANTS}+="%c"
+#ACTION=="change", KERNEL=="sd?", ENV{ID_BUS}=="usb", ENV{DISK_MEDIA_CHANGE}=="1", ENV{DEVTYPE}=="disk", PROGRAM="/bin/systemd-escape -p --template=flush-sd@.service $env{DEVNAME}.$env{SEQNUM}", ENV{SYSTEMD_WANTS}+="%c"
+#ACTION=="change", KERNEL=="sd?", ENV{ID_BUS}=="usb", ENV{DISK_MEDIA_CHANGE}=="1", ENV{DEVTYPE}=="disk", PROGRAM="/bin/systemd-escape -p --template=${SERVICE}@.service \$env{DEVNAME}.\$env{SEQNUM}", ENV{SYSTEMD_WANTS}+="%c"
 
 # systemctl stop [servicename]
 # systemctl disable [servicename]
@@ -132,7 +130,14 @@ chmod 755 /etc/udev/rules.d/$RULE
 # systemctl daemon-reload
 # systemctl reset-failed
 
-# systemctl status flush-sd@dev-sdc.service
+# tail -300f /var/log/flush.log
+# journalctl -f&
+# udevadm monitor --environment
+# udevadm monitor -p systemd
+# sudo systemctl show flush-sd@dev-sdc.service
+# sudo systemctl start flush-sd@dev-sdc.service
+# sudo systemctl status flush-sd@dev-sdc.service
+# systemd-escape -p --template=flush-sd@.service /dev/sdc 23424
 
 # systemctl --type=service
 # systemctl status drive-change.service

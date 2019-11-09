@@ -11,14 +11,17 @@ source $DIR/env.sh
 #echo "param 1 : ${1}" >> $LOG
 
 # load vars from udev for current drive
-eval $(udevadm info --query=env --export $1)
+DEVNAME="$(cut -d'.' -f1 <<<"$1")"
+eval $(udevadm info --query=env --export $DEVNAME)
 #env >> $LOG
+
+date +%F-%T >> $LOG
 
 # setLight RED 1 ON
 setLight(){
     R="$1_0$2"
     echo "LED - Color: $1, DeviceID: $2, State: $3, Pin: ${!R} " >> $LOG
-    pigs modes $1 w
+    pigs modes ${!R} w
     pigs w ${!R} $3
 }
 
