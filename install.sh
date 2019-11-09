@@ -110,7 +110,7 @@ if [ -n "$RULE" ] ; then
 fi
 
 # create rule
-echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", RUN+=\"echo $DIR/$FLUSH \$env{DEVNAME} | at now\"" >> /etc/udev/rules.d/$RULE
+echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", RUN+=\"$DIR/$WRAP \$env{DEVNAME}\"" >> /etc/udev/rules.d/$RULE
 chmod 755 /etc/udev/rules.d/$RULE
 
 #echo "#ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", TAG+=\"systemd\", ENV{SYSTEMD_WANTS}==\"${SERVICE}@%E{DEVNAME}.service\"" >> /etc/udev/rules.d/$RULE

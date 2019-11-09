@@ -25,5 +25,6 @@ export BASE_GPIO_PATH=/sys/class/gpio
 
 export SERVICE=flush-sd
 export SERVICE_FILE=/lib/systemd/system/${SERVICE}\@.service
+export WRAP=wrap.sh
 export FLUSH=flush.sh
 export RULE=99-flush-sd.rules
