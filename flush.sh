@@ -5,8 +5,8 @@ then echo "Please run as root"
     exit
 fi
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $DIR/env.sh
+DIR=$(cd `dirname $0` && pwd)
+. $DIR/env.sh
 
 #echo "param 1 : ${1}" >> $LOG
 
