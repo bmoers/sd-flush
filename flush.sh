@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 
 if [ "$EUID" -ne 0 ]
 then echo "Please run as root"
@@ -19,10 +19,10 @@ date +%F-%T >> $LOG
 
 # setLight RED 1 ON
 setLight(){
-    R="$1_0$2"
-    echo "LED - Color: $1, DeviceID: $2, State: $3, Pin: ${!R} " >> $LOG
-    pigs modes ${!R} w
-    pigs w ${!R} $3
+    eval "PIN=\$$1_0$2"
+    echo "LED - Color: $1, DeviceID: $2, State: $3, Pin: $PIN " >> $LOG
+    pigs modes $PIN w
+    pigs w $PIN $3
 }
 
 flush_drive () {
@@ -43,8 +43,8 @@ flush_drive () {
     #
     #shred -f -z -n 1 ${DISC} | col -b -l 10 >> $LOG
     echo "shred -f -n 1 ${DISC} .... (will take some time) " >> $LOG
-    #time ( shred -f -n 1 ${DISC} ) 2>&1 1>/dev/null >> $LOG
-    time (sleep 30) 2>&1 1>/dev/null >> $LOG
+    time (shred -f -n 1 ${DISC}) 2>> $LOG
+    #time (sleep 3) 2>> $LOG
     echo "done" >> $LOG
     
     setLight "RED" $DEVICE_NR $OFF

@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 
 #  http://blog.fraggod.net/2012/06/16/proper-ish-way-to-start-long-running-systemd-service-on-udev-event-device-hotplug.html
 #  http://blog.fraggod.net/2015/01/12/starting-systemd-service-instance-for-device-from-udev.html
@@ -54,6 +54,7 @@ chmod chmod +x /etc/udev/rules.d/$RULE
 
 # init pins and blink
 initPin(){
+    echo "init pin $1"
     pigs modes $1 w
     # blink
     pigs w $1 $ON mils 1000 w $1 $OFF &
@@ -62,10 +63,10 @@ initPin(){
 echo "init LED"
 for i in {1..4}
 do
-    R="RED_0$i"
-    G="GREEN_0$i"
-    initPin ${!R}
-    initPin ${!G}
+    eval "R=\$RED_0$i"
+    eval "G=\$GREEN_0$i"
+    initPin ${R}
+    initPin ${G}
 done
 
 
@@ -77,7 +78,7 @@ Description=flush sd card
 
 [Service]
 Type=oneshot
-TimeoutStartSec=30
+TimeoutStartSec=300
 ExecStart=$DIR/$FLUSH /%I
 EOF
 
@@ -105,13 +106,13 @@ echo "configure udev rule /etc/udev/rules.d/$RULE"
 rm -rf /etc/udev/rules.d/$RULE
 
 # create rule
-#echo "#ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", RUN+=\"$DIR/$FLUSH\"" >> /etc/udev/rules.d/$RULE
-#chmod 755 /etc/udev/rules.d/$RULE
+echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", RUN+=\"echo $DIR/$FLUSH | at now\"" >> /etc/udev/rules.d/$RULE
+chmod 755 /etc/udev/rules.d/$RULE
 
 #echo "#ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", TAG+=\"systemd\", ENV{SYSTEMD_WANTS}==\"${SERVICE}@%E{DEVNAME}.service\"" >> /etc/udev/rules.d/$RULE
 #chmod 755 /etc/udev/rules.d/$RULE
 
-echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", PROGRAM=\"/bin/systemd-escape -p --template=${SERVICE}@.service \$env{DEVNAME}.\$env{SEQNUM}\", ENV{SYSTEMD_WANTS}+=\"%c\"" >> /etc/udev/rules.d/$RULE
+echo "#ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", PROGRAM=\"/bin/systemd-escape -p --template=${SERVICE}@.service \$env{DEVNAME}.\$env{SEQNUM}\", ENV{SYSTEMD_WANTS}+=\"%c\"" >> /etc/udev/rules.d/$RULE
 chmod 755 /etc/udev/rules.d/$RULE
 
 #>> /lib/systemd/system/flush-sd@.service
@@ -133,7 +134,6 @@ chmod 755 /etc/udev/rules.d/$RULE
 # tail -300f /var/log/flush.log
 # journalctl -f&
 # udevadm monitor --environment
-# udevadm monitor -p systemd
 # sudo systemctl show flush-sd@dev-sdc.service
 # sudo systemctl start flush-sd@dev-sdc.service
 # sudo systemctl status flush-sd@dev-sdc.service
