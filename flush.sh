@@ -45,7 +45,7 @@ flush_drive () {
     echo "shred -f -n 1 ${DISC} .... (will take some time) " >> $LOG
     
     #shred -f -n 1 ${DISC} 2>> $LOG
-    shred -f -v -n 1 ${DISC} | tee -a $LOG
+    shred -f -v -n 1 ${DISC} 2>&1 | tee -a $LOG
     #sleep 3 2>> $LOG
     
     echo "shredding completed at `date +%F-%T`" >> $LOG
