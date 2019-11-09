@@ -15,7 +15,7 @@
 #      https://codingequanimity.tumblr.com/post/129163035064/passing-variables-from-udev-to-systemd/amp
 
 
-if [ "$EUID" -ne 0 ]
+if [ $(id -u) -ne 0 ]
 then echo "Please run as root"
     exit
 fi
@@ -45,11 +45,11 @@ systemctl daemon-reload
 
 
 echo "change permission on flush script $DIR/$FLUSH"
-chmod chmod +x $DIR/$FLUSH
+chmod +x $DIR/$FLUSH
 
 echo "init log file ${LOG}"
 touch $LOG
-chmod chmod +x /etc/udev/rules.d/$RULE
+chmod +x /etc/udev/rules.d/$RULE
 
 # init pins and blink
 initPin(){
@@ -59,8 +59,10 @@ initPin(){
     pigs w $1 $ON mils 1000 w $1 $OFF &
 }
 
+
+
 echo "init LED"
-for i in {1..4}
+for i in $(seq 1 4)
 do
     eval "R=\$RED_0$i"
     eval "G=\$GREEN_0$i"
@@ -102,10 +104,12 @@ systemctl daemon-reload
 echo "configure udev rule /etc/udev/rules.d/$RULE"
 
 # remove in case script is executed multiple times
-rm -rf /etc/udev/rules.d/$RULE
+if [ ! -z "$RULE"] ; then
+    rm -rf /etc/udev/rules.d/$RULE
+fi
 
 # create rule
-echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", RUN+=\"echo $DIR/$FLUSH | at now\"" >> /etc/udev/rules.d/$RULE
+echo "ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", RUN+=\"echo $DIR/$FLUSH \$env{DEVNAME} | at now\"" >> /etc/udev/rules.d/$RULE
 chmod 755 /etc/udev/rules.d/$RULE
 
 #echo "#ACTION==\"change\", KERNEL==\"sd?\", ENV{ID_BUS}==\"usb\", ENV{DISK_MEDIA_CHANGE}==\"1\", ENV{DEVTYPE}==\"disk\", TAG+=\"systemd\", ENV{SYSTEMD_WANTS}==\"${SERVICE}@%E{DEVNAME}.service\"" >> /etc/udev/rules.d/$RULE

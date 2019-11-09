@@ -1,6 +1,6 @@
 #! /bin/sh
 
-if [ "$EUID" -ne 0 ]
+if [ $(id -u) -ne 0 ]
 then echo "Please run as root"
     exit
 fi
@@ -8,11 +8,13 @@ fi
 DIR=$(cd `dirname $0` && pwd)
 . $DIR/env.sh
 
-#echo "param 1 : ${1}" >> $LOG
+echo "------------------------> param 1 : ${1}" >> $LOG
 
 # load vars from udev for current drive
-DEVNAME="$(cut -d'.' -f1 <<<"$1")"
+DEVNAME="$(echo $1 | cut -d'.' -f1 )"
+
 eval $(udevadm info --query=env --export $DEVNAME)
+
 #env >> $LOG
 
 date +%F-%T >> $LOG
@@ -33,38 +35,37 @@ flush_drive () {
     setLight "RED" $DEVICE_NR $ON
     setLight "GREEN" $DEVICE_NR $OFF
     
-    echo "*** cleaning DISC ${DISC} ***" >> $LOG
-    
+    echo "********* cleaning DISC ${DISC} *********" >> $LOG
     
     echo "unmount ${DISC}?" >> $LOG
-    #unmount ${DISC}?
+    unmount ${DISC}?
     
-    echo "shredding " >> $LOG
-    #
-    #shred -f -z -n 1 ${DISC} | col -b -l 10 >> $LOG
+    echo "shredding start at `date +%F-%T`" >> $LOG
+    
+    #shred -f -v -n 1 ${DISC} | col -b -l 10 >> $LOG
     echo "shred -f -n 1 ${DISC} .... (will take some time) " >> $LOG
-    time (shred -f -n 1 ${DISC}) 2>> $LOG
-    #time (sleep 3) 2>> $LOG
-    echo "done" >> $LOG
+    #shred -f -n 1 ${DISC} 2>> $LOG
+    sleep 3 2>> $LOG
+    
+    echo "shredding completed at `date +%F-%T`" >> $LOG
     
     setLight "RED" $DEVICE_NR $OFF
     setLight "GREEN" $DEVICE_NR $ON
 }
-
 
 if [ -d "/sys${DEVPATH}" ]; then
     
     # ID_INSTANCE=0:2
     #${ID_INSTANCE}
     
-    DEVICE_NR="$(cut -d':' -f2 <<<"$ID_INSTANCE")"
+    DEVICE_NR="$(echo $ID_INSTANCE | cut -d':' -f2)"
     
     DISC_EXISTS=false
     PARTITION_EXISTS=false
     
     echo "DEVNAME          : ${DEVNAME} " >> $LOG
-    
-    if $(/sbin/sfdisk -l ${DEVNAME} &> /dev/null) ;
+    /sbin/sfdisk -l ${DEVNAME} > /dev/null 2>&1
+    if [ $? -eq 0 ]
     then
         DISC_EXISTS=true
     else
@@ -75,8 +76,8 @@ if [ -d "/sys${DEVPATH}" ]; then
     fi
     echo "DISC_EXISTS      : ${DISC_EXISTS} " >> $LOG
     
-    
-    if $(/sbin/sfdisk -d ${DEVNAME} &> /dev/null) ;
+    /sbin/sfdisk -d ${DEVNAME} > /dev/null 2>&1
+    if [ $? -eq 0 ]
     then
         PARTITION_EXISTS=true
     else
@@ -88,15 +89,9 @@ if [ -d "/sys${DEVPATH}" ]; then
         exit 0
     fi
     echo "PARTITION_EXISTS : ${PARTITION_EXISTS} " >> $LOG
-    
-    
-    
-    
     echo "DISC_NAME        : ${DEVNAME} " >> $LOG
-    
     echo "DISC to be flushed ${DEVNAME}" >> $LOG
     
-    echo "FLUSH DRIVE ---------------------------------- ${ENV}" >> $LOG
     flush_drive ${DEVNAME} ${DEVICE_NR}
 else
     echo "Nothing to do        : ${ENV} " >> $LOG
