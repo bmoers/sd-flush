@@ -61,6 +61,11 @@ flush_drive () {
     setLight "GREEN" $DEVICE_NR $ON
 }
 
+cleanup (){
+    # clean the lock file
+    rm -rf ${DIR}/lock_${DEVICE_NR}
+}
+
 if [ -d "/sys${DEVPATH}" ]; then
     
     # ID_INSTANCE=0:2
@@ -82,6 +87,7 @@ if [ -d "/sys${DEVPATH}" ]; then
         echo "DISC removed" >> $LOG
         setLight "RED" $DEVICE_NR $OFF
         setLight "GREEN" $DEVICE_NR $OFF
+        cleanup
         exit 0
     fi
     echo "DISC_EXISTS      : ${DISC_EXISTS} " >> $LOG
@@ -96,6 +102,7 @@ if [ -d "/sys${DEVPATH}" ]; then
         
         setLight "RED" $DEVICE_NR $OFF
         setLight "GREEN" $DEVICE_NR $ON
+        cleanup
         exit 0
     fi
     echo "PARTITION_EXISTS : ${PARTITION_EXISTS} " >> $LOG
@@ -106,5 +113,6 @@ if [ -d "/sys${DEVPATH}" ]; then
 else
     echo "Nothing to do        : ${ENV} " >> $LOG
 fi
-# clean the lock file
-rm -rf ${DIR}/lock_${DEVICE_NR}
+
+cleanup
+exit 0
