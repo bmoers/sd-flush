@@ -1,18 +1,24 @@
-#GND_01=Pin-39
-export RED_01=26
-export GREEN_01=19
+# set to true (shred on), false (shred off)
+export ARMED=false
 
-#GND_02=Pin-34
-export RED_02=16
-export GREEN_02=20
+# LED pins
+# every USB port matches to one set of LED
 
-#GND_03=Pin-25
-export RED_03=11
-export GREEN_03=9
+#GND_00=Pin-39
+export RED_00=26
+export GREEN_00=19
 
-#GND_04=Pin-9
-export RED_04=4
-export GREEN_04=3
+#GND_01=Pin-34
+export RED_01=16
+export GREEN_01=20
+
+#GND_02=Pin-25
+export RED_02=11
+export GREEN_02=9
+
+#GND_03=Pin-9
+export RED_03=4
+export GREEN_03=3
 
 # Assign names to states
 export ON="1"

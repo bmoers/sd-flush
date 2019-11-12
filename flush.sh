@@ -42,11 +42,13 @@ flush_drive () {
     
     echo "shredding start at `date +%F-%T`" >> $LOG
     
-    echo "shred -f -n 1 ${DISC} .... (will take some time) " >> $LOG
-    
-    #shred -f -n 1 ${DISC} 2>> $LOG
-    shred -f -v -n 1 ${DISC} 2>&1 | tee -a $LOG
-    #sleep 3 2>> $LOG
+    if [ $ARMED = "true" ]; then
+        echo "shred -f -n 1 ${DISC} .... (will take some time) " >> $LOG
+        shred -f -v -n 1 ${DISC} 2>&1 | tee -a $LOG
+    else
+        echo "simulate shred " >> $LOG
+        sleep 3 2>> $LOG
+    fi;
     
     echo "shredding completed at `date +%F-%T`" >> $LOG
     
@@ -59,12 +61,15 @@ if [ -d "/sys${DEVPATH}" ]; then
     # ID_INSTANCE=0:2
     #${ID_INSTANCE}
     
-    DEVICE_NR="$(echo $ID_INSTANCE | cut -d':' -f2)"
+    #DEVICE_NR="$(echo $ID_INSTANCE | cut -d':' -f2)"
+    DEVICE_NR="$(echo $DEVPATH | sed -r 's/.*\/host([0-9]+)\/.*/\1/')"
     
     DISC_EXISTS=false
     PARTITION_EXISTS=false
     
     echo "DEVNAME          : ${DEVNAME} " >> $LOG
+    echo "DEVICE_NR        : ${DEVICE_NR} " >> $LOG
+    
     /sbin/sfdisk -l ${DEVNAME} > /dev/null 2>&1
     if [ $? -eq 0 ]
     then
