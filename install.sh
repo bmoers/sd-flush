@@ -40,6 +40,21 @@ Type=forking
 WantedBy=multi-user.target
 EOF
 
+cat > /etc/systemd/system/flush-startup.service << EOF
+[Unit]
+Description=SD Flush init
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=${DIR}/init.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl enable /etc/systemd/system/flush-startup.service
+
 # apply changes
 systemctl daemon-reload
 
@@ -51,25 +66,8 @@ echo "init log file ${LOG}"
 touch $LOG
 chmod +x /etc/udev/rules.d/$RULE
 
-# init pins and blink
-initPin(){
-    echo "init pin $1"
-    pigs modes $1 w
-    # blink
-    pigs w $1 $ON mils 1000 w $1 $OFF &
-}
 
-
-
-echo "init LED"
-for i in $(seq 1 4)
-do
-    eval "R=\$RED_0$i"
-    eval "G=\$GREEN_0$i"
-    initPin ${R}
-    initPin ${G}
-done
-
+$DIR/init.sh
 
 echo "configure service ${SERVICE_FILE}"
 
@@ -153,7 +151,6 @@ udevadm control --reload-rules && udevadm trigger
 
 echo "plug the sd devices out and back in now"
 
-rm -rf lock_*
 
 exit 0
 
