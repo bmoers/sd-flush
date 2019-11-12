@@ -55,9 +55,8 @@ EOF
 
 systemctl enable /etc/systemd/system/flush-startup.service
 
-# apply changes
-systemctl daemon-reload
-
+echo "change permission on init script $DIR/init.sh"
+chmod +x $DIR/init.sh
 
 echo "change permission on flush script $DIR/$FLUSH"
 chmod +x $DIR/$FLUSH
@@ -66,11 +65,10 @@ echo "init log file ${LOG}"
 touch $LOG
 chmod +x /etc/udev/rules.d/$RULE
 
-
+echo "run init.sh"
 $DIR/init.sh
 
 echo "configure service ${SERVICE_FILE}"
-
 cat > ${SERVICE_FILE} << EOF
 [Unit]
 Description=flush sd card
@@ -94,7 +92,6 @@ EOF
 #EOF
 
 echo "reload service daemon"
-
 #systemctl enable ${SERVICE_FILE}
 systemctl daemon-reload
 
@@ -151,6 +148,4 @@ udevadm control --reload-rules && udevadm trigger
 
 echo "plug the sd devices out and back in now"
 
-
 exit 0
-
