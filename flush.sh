@@ -23,7 +23,7 @@ fi
 #env >> $LOG
 echo " " >> $LOG
 echo " " >> $LOG
-echo "SD-Flush start: `date +%F-%T`" >> $LOG
+echo "SD-Card change detected at: `date +%F-%T`" >> $LOG
 
 # setLight RED 1 ON
 setLight(){
