@@ -153,5 +153,7 @@ udevadm control --reload-rules && udevadm trigger
 
 echo "plug the sd devices out and back in now"
 
+rm -rf lock_*
+
 exit 0
 

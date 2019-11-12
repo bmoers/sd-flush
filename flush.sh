@@ -10,15 +10,15 @@ DIR=$(cd `dirname $0` && pwd)
 
 # load vars from udev for current drive
 DEVNAME="$(echo $1 | cut -d'.' -f1 )"
+eval $(udevadm info --query=env --export $DEVNAME)
+
 DEVICE_NR="$(echo $DEVPATH | sed -r 's/.*\/host([0-9]+)\/.*/\1/')"
 if [ -e ${DIR}/lock_${DEVICE_NR} ]; then
-    echo "there is already a running job for $DEVNAME"
+    echo "there is already a running job for $DEVNAME" >> $LOG
     exit 1
 else
     touch ${DIR}/lock_${DEVICE_NR}
 fi
-
-eval $(udevadm info --query=env --export $DEVNAME)
 
 #env >> $LOG
 
