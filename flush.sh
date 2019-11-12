@@ -8,10 +8,15 @@ fi
 DIR=$(cd `dirname $0` && pwd)
 . $DIR/env.sh
 
-echo "------------------------> param 1 : ${1}" >> $LOG
-
 # load vars from udev for current drive
 DEVNAME="$(echo $1 | cut -d'.' -f1 )"
+DEVICE_NR="$(echo $DEVPATH | sed -r 's/.*\/host([0-9]+)\/.*/\1/')"
+if [ -e ${DIR}/lock_${DEVICE_NR} ]; then
+    echo "there is already a running job for $DEVNAME"
+    exit 1
+else
+    touch ${DIR}/lock_${DEVICE_NR}
+fi
 
 eval $(udevadm info --query=env --export $DEVNAME)
 
@@ -62,7 +67,6 @@ if [ -d "/sys${DEVPATH}" ]; then
     #${ID_INSTANCE}
     
     #DEVICE_NR="$(echo $ID_INSTANCE | cut -d':' -f2)"
-    DEVICE_NR="$(echo $DEVPATH | sed -r 's/.*\/host([0-9]+)\/.*/\1/')"
     
     DISC_EXISTS=false
     PARTITION_EXISTS=false
@@ -102,3 +106,5 @@ if [ -d "/sys${DEVPATH}" ]; then
 else
     echo "Nothing to do        : ${ENV} " >> $LOG
 fi
+# clean the lock file
+rm -rf ${DIR}/lock_${DEVICE_NR}
