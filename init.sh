@@ -15,7 +15,7 @@ initPin(){
 }
 
 echo "init LED" >> $LOG
-for i in $(seq 1 4)
+for i in $(seq 0 3)
 do
     eval "R=\$RED_0$i"
     eval "G=\$GREEN_0$i"
