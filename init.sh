@@ -11,6 +11,7 @@ initPin(){
     echo "init pin $1" >> $LOG
     pigs modes $1 w
     # blink
+    echo "blink pin $1" >> $LOG
     pigs w $1 $ON mils 1000 w $1 $OFF &
 }
 

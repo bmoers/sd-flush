@@ -14,15 +14,16 @@ eval $(udevadm info --query=env --export $DEVNAME)
 
 DEVICE_NR="$(echo $DEVPATH | sed -r 's/.*\/host([0-9]+)\/.*/\1/')"
 if [ -e ${DIR}/lock_${DEVICE_NR} ]; then
-    echo "there is already a running job for $DEVNAME" >> $LOG
+    #echo "there is already a running job for $DEVNAME" >> $LOG
     exit 1
 else
     touch ${DIR}/lock_${DEVICE_NR}
 fi
 
 #env >> $LOG
-
-date +%F-%T >> $LOG
+echo " " >> $LOG
+echo " " >> $LOG
+echo "SD-Flush start: `date +%F-%T`" >> $LOG
 
 # setLight RED 1 ON
 setLight(){
@@ -45,17 +46,17 @@ flush_drive () {
     echo "unmount ${DISC}?" >> $LOG
     unmount ${DISC}?
     
-    echo "shredding start at `date +%F-%T`" >> $LOG
+    echo "Shred start at `date +%F-%T`" >> $LOG
     
     if [ $ARMED = "true" ]; then
         echo "shred -f -n 1 ${DISC} .... (will take some time) " >> $LOG
         shred -f -v -n 1 ${DISC} 2>&1 | tee -a $LOG
     else
-        echo "simulate shred " >> $LOG
+        echo "...simulate shred " >> $LOG
         sleep 3 2>> $LOG
     fi;
     
-    echo "shredding completed at `date +%F-%T`" >> $LOG
+    echo "Shred completed at `date +%F-%T`" >> $LOG
     
     setLight "RED" $DEVICE_NR $OFF
     setLight "GREEN" $DEVICE_NR $ON
