@@ -26,6 +26,22 @@ echo " " >> $LOG
 echo "SD-Card change detected at: `date +%F-%T`" >> $LOG
 
 # setLight RED 1 ON
+
+# green $DEVICE_NR [$ON | $OFF ]
+green(){
+    setLight "RED" $1 $OFF
+    setLight "GREEN" $1 $2
+}
+
+red(){
+    setLight "GREEN" $1 $OFF
+    setLight "RED" $1 $2
+}
+off(){
+    setLight "GREEN" $1 $OFF
+    setLight "RED" $1 $OFF
+}
+
 setLight(){
     eval "PIN=\$$1_0$2"
     echo "LED - Color: $1, DeviceID: $2, State: $3, Pin: $PIN " >> $LOG
@@ -38,8 +54,9 @@ flush_drive () {
     DISC=$1
     DEVICE_NR=$2
     
-    setLight "RED" $DEVICE_NR $ON
-    setLight "GREEN" $DEVICE_NR $OFF
+    red $DEVICE_NR $ON
+    #setLight "RED" $DEVICE_NR $ON
+    #setLight "GREEN" $DEVICE_NR $OFF
     
     echo "********* cleaning DISC ${DISC} *********" >> $LOG
     
@@ -58,8 +75,9 @@ flush_drive () {
     
     echo "Shred completed at `date +%F-%T`" >> $LOG
     
-    setLight "RED" $DEVICE_NR $OFF
-    setLight "GREEN" $DEVICE_NR $ON
+    green $DEVICE_NR $ON
+    #setLight "RED" $DEVICE_NR $OFF
+    #setLight "GREEN" $DEVICE_NR $ON
 }
 
 cleanup (){
@@ -86,8 +104,10 @@ if [ -d "/sys${DEVPATH}" ]; then
         DISC_EXISTS=true
     else
         echo "DISC removed" >> $LOG
-        setLight "RED" $DEVICE_NR $OFF
-        setLight "GREEN" $DEVICE_NR $OFF
+        off $DEVICE_NR
+        
+        #setLight "RED" $DEVICE_NR $OFF
+        #setLight "GREEN" $DEVICE_NR $OFF
         cleanup
         exit 0
     fi
@@ -101,8 +121,9 @@ if [ -d "/sys${DEVPATH}" ]; then
         echo "DISC has no partition, seems to be clean" >> $LOG
         echo "PARTITION_EXISTS > $PARTITION_EXISTS" >> $LOG
         
-        setLight "RED" $DEVICE_NR $OFF
-        setLight "GREEN" $DEVICE_NR $ON
+        green $DEVICE_NR $ON
+        #setLight "RED" $DEVICE_NR $OFF
+        #setLight "GREEN" $DEVICE_NR $ON
         cleanup
         exit 0
     fi
