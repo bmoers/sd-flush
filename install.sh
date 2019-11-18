@@ -1,20 +1,5 @@
 #! /bin/sh
 
-#  http://blog.fraggod.net/2012/06/16/proper-ish-way-to-start-long-running-systemd-service-on-udev-event-device-hotplug.html
-#  http://blog.fraggod.net/2015/01/12/starting-systemd-service-instance-for-device-from-udev.html
-
-# IGNORE https://stackoverflow.com/questions/49349712/udev-detach-script-to-wait-for-mounting
-# https://forums.opensuse.org/showthread.php/485261-Script-run-from-udev-rule-gets-killed-shortly-after-start
-
-# https://www.pcsuggest.com/run-shell-scripts-from-udev-rules/
-
-# --> https://wiki.archlinux.de/title/Udev#Ausf.C3.BChren_bei_anstecken_von_USB_Ger.C3.A4ten
-
-# ---> https://superuser.com/questions/924683/passing-udev-environment-variables-to-systemd-service-execution
-# ---> http://0pointer.de/blog/projects/instances.html
-#      https://codingequanimity.tumblr.com/post/129163035064/passing-variables-from-udev-to-systemd/amp
-
-
 if [ $(id -u) -ne 0 ]
 then echo "Please run as root"
     exit
@@ -43,14 +28,16 @@ EOF
 cat > /etc/systemd/system/flush-startup.service << EOF
 [Unit]
 Description=SD Flush init
-After=network.target
+DefaultDependencies=no
+After=sysinit.target local-fs.target
+Before=base.target
 
 [Service]
 Type=oneshot
 ExecStart=${DIR}/init.sh
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=base.target
 EOF
 
 systemctl enable /etc/systemd/system/flush-startup.service
